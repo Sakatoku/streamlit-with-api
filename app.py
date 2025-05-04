@@ -11,7 +11,9 @@ import inspect
 
 def new_component_request_handler_get(self, path: str) -> None:
     print("Custom handler for path:", path)
-    if path == "api":
+    # pathが"api"で始まる場合は、APIのレスポンスを返す
+    # それ以外の場合は、元のハンドラを呼び出す
+    if path.startswith("api"):
         # サンプルのJSONを出力する
         sample_response = {
             "message": "Hello from Streamlit!",
