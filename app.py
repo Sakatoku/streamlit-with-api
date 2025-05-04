@@ -4,6 +4,11 @@ import streamlit as st
 # import requests
 import json
 
+from streamlit_card import card
+import inspect
+
+# class OverrideComponentRequestHandler(st.web.server.component_request_handler.ComponentRequestHandler):
+
 def new_component_request_handler_get(self, path: str) -> None:
     print("Custom handler for path:", path)
     if path == "api":
@@ -19,16 +24,43 @@ def new_component_request_handler_get(self, path: str) -> None:
         self.set_header("Cache-Control", "no-cache")
         if st.web.server.routes.allow_cross_origin_requests():
             self.set_header("Access-Control-Allow-Origin", "*")
-    elif "original_handler" in st.session_state:
-        st.session_state.original_handler(self, path)
+    else:
+        print("Calling original handler...")
+        st.web.server.component_request_handler.ComponentRequestHandler.original_get(self, path)
+    # elif "original_handler" in st.session_state:
+    #     print("Calling original handler...")
+    #     st.session_state.original_handler(self, path)
+    # else:
+    #     print("No original handler found.")
+    #     print(st.session_state)
 
 import fasteners
 with fasteners.InterProcessLock("/tmp/lockfile"):
-    if "original_handler" not in st.session_state:
-        st.session_state.original_handler = st.web.server.component_request_handler.ComponentRequestHandler.get
-    st.web.server.component_request_handler.ComponentRequestHandler.get = new_component_request_handler_get
+    print("Lock acquired")
+    if st.web.server.component_request_handler.ComponentRequestHandler.get.__module__ == "streamlit.web.server.component_request_handler":
+        st.web.server.component_request_handler.ComponentRequestHandler.original_get = st.web.server.component_request_handler.ComponentRequestHandler.get
+        st.web.server.component_request_handler.ComponentRequestHandler.get = new_component_request_handler_get
+        # st.session_state.original_handler = st.web.server.component_request_handler.ComponentRequestHandler.get
+        print("Original handler saved")
+    else:
+        print("Original handler already saved")
+    # st.web.server.component_request_handler.ComponentRequestHandler.get = new_component_request_handler_get
+
+st.write(inspect.getfile(st.web.server.component_request_handler.ComponentRequestHandler.get))
+st.write(st.web.server.component_request_handler.ComponentRequestHandler.get.__code__.co_filename)
+st.write(st.web.server.component_request_handler.ComponentRequestHandler.get.__module__)
+st.write(inspect.signature(st.web.server.component_request_handler.ComponentRequestHandler.get))
 
 st.title("FastAPI with Streamlit")
+
+hasClicked = card(
+  title="Hello World!",
+  text="Some description",
+  image="http://placekitten.com/200/300",
+  url="https://github.com/gamcoh/st-card"
+)
+
+st.write(st.session_state)
 
 # import tornado.web
 # _server_old_carete_app = st.web.server.Server._create_app
