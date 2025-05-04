@@ -1,3 +1,4 @@
 streamlit
 uvicorn
 fastapi
+fasteners
